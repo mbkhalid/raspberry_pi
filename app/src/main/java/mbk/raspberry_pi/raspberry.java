@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -26,112 +27,51 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
-import java.util.Locale;
 
 
 public class raspberry extends Activity {
 
+    /*****************************************************/
+
+
+    private static final int SPEECH_REQUEST_CODE = 0;
     public TextView speechOutput;
     private TextToSpeech tts;
-    String spokenText;
-
-    // TESTING//
-    public String action[] = {"turn on", "turn off", "unlock", "lock", "status", "temperature"};
-    public String noun[] = {"main light", "main door", "stove"};
-    private String action_todo;
-    private String noun_todo;
+    private String spokenText, spokenTex;
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
      */
     private GoogleApiClient client;
 
-    public String get_action(String speechOutput) {
-        int i = 0;
-        while (action[i] != null & i< action.length-1) {
-            if (speechOutput.contains(action[i])) {
-                return action[i];
-            } else {
-                i++;
+    public void My_Main() {
 
-            }
-        }
-        return null;
-    }
+        All_Function variableName = new All_Function();
+        String action_todo = variableName.get_action(spokenText);
 
-    public String get_noun(String speechOutput) {
-        int i = 0;
-        while (noun[i] != null & i< noun.length-1) {
-            if (speechOutput.contains(noun[i])) {
-                return noun[i];
-            }
-            else
-                i++;
-        }
-        return null;
-    }
+        All_Function variableName1 = new All_Function();
+        String noun_todo = variableName1.get_noun(spokenText);
 
-    public void main_lights(String action_todo) {
-        if (action_todo == "turn off") {
-            //turn off the light
-        } else if (action_todo == "turn on") {
-            //turn on the light
-        }
-    }
+        All_Function variableName3 = new All_Function();
+        Boolean confirm = variableName3.ask_to_confirm(action_todo, noun_todo);
 
-    public void main_door(String action_todo) {
-        if (action_todo == "lock") {
-            //lock the door
-        } else if (action_todo == "unlock") {
-            //un lock the door
-        }
-    }
+        if (confirm) {
+            String speech = "Do you want to " + action_todo + noun_todo;
+            speak(speech);
+            SystemClock.sleep(2000);
+            displaySpeechRecognizer();
+            //SystemClock.sleep(3000);
+            if (spokenTex == "yes") {
+                speak("Alright");
+            } else
+                speak("I will not do anything");
 
-    public void stove(String action_todo) {
-        if (action_todo == "temperature") {
-            //lock the door
-        }
-    }
-
-    public boolean confirmation(String action_todo, String noun_todo) {
-        boolean act = false;
-        String confirm;
-            if (action_todo==null|| noun_todo==null){
-                speak("Sorry I didnt get you, Please speak again");
         }
         else {
-                confirm = "Do you want me to " + action_todo + noun_todo;
-                speak(confirm);
-                act= true;
-            }
-        SystemClock.sleep(2500);
-        //displaySpeechRecognizer();
-/*
-        if (spokenText == "yes") {
-            act = true;
-        } else if (spokenText == "no") {
-            act = false;
-        }*/
-        return act;
-    }
-
-    public void My_Main() {
-        action_todo = get_action(spokenText);
-        noun_todo = get_noun(spokenText);
-        SystemClock.sleep(1500);
-        if (confirmation(action_todo, noun_todo)) {
-            if (noun_todo == "main lights") {
-                main_lights(action_todo);
-            } else if (noun_todo == "main door") {
-                speak("Alright, just give me a second ");
-                main_door(action_todo);
-            } else if (noun_todo == "stove") {
-                stove(action_todo);
-            }
+            speak("Sorry I didnt get you please speak again");
         }
     }
 
-    // Testing //
     public void onclick(View v) {
         if (v.getId() == R.id.speak) {
             speak(spokenText);
@@ -154,19 +94,6 @@ public class raspberry extends Activity {
 
     /*****************************************************/
        /*  Text to Speech  */
-        /* Speak function */
-
-    /*****************************************************/
-
-    private void speak(String text) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
-        } else {
-            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
-        }
-    }
-
-    // ------------------------------------------------------
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -182,12 +109,31 @@ public class raspberry extends Activity {
             @Override
             public void onInit(int status) {
                 if (status == TextToSpeech.SUCCESS) {
-                    int result = tts.setLanguage(Locale.US);
+                    tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+                        @Override
+                        public void onDone(String utteranceId) {
+                            // Log.d("MainActivity", "TTS finished");
+                            //SystemClock.sleep(2000);
+                        }
+
+                        @Override
+                        public void onError(String utteranceId) {
+                        }
+
+                        @Override
+                        public void onStart(String utteranceId) {
+                        }
+                    });
+                }
+
+                 /*   int result = tts.setLanguage(Locale.US);
                     if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
                         Log.e("TTS", "This Language is not supported");
                     }
 
-                } else {
+                }
+                */
+                else {
                     Log.e("TTS", "Initilization Failed!");
                 }
             }
@@ -195,9 +141,12 @@ public class raspberry extends Activity {
         // -----------------------------------------------------------------
         return true;
     }
+    // ------------------------------
+
 
     /*****************************************************/
        /*  Text to Speech  */
+        /* Speak function */
 
     /*****************************************************/
 
@@ -209,8 +158,16 @@ public class raspberry extends Activity {
         }
         super.onDestroy();
     }
-    // ------------------------------
 
+    /*****************************************************/
+
+    private void speak(String text) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID);
+        } else {
+            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+        }
+    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -253,6 +210,12 @@ public class raspberry extends Activity {
         AppIndex.AppIndexApi.start(client, getIndexApiAction());
     }
 
+
+    /*****************************************************/
+       /*  This is a background process for connecting      */
+      /*   to the arduino server and sending               */
+     /*    the GET request with the added data           */
+
     @Override
     public void onStop() {
         super.onStop();
@@ -263,11 +226,33 @@ public class raspberry extends Activity {
         client.disconnect();
     }
 
-
     /*****************************************************/
-       /*  This is a background process for connecting      */
-      /*   to the arduino server and sending               */
-     /*    the GET request with the added data           */
+       /*  This is a background process for Speech Recognition  */
+
+    // Create an intent that can start the Speech Recognizer activity
+    private void displaySpeechRecognizer() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+// Start the activity, the intent will be populated with the speech text
+        startActivityForResult(intent, SPEECH_REQUEST_CODE);
+    }
+
+    // This callback is invoked when the Speech Recognizer returns.
+// This is where you process the intent and extract the speech text from the intent.
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode,
+                                    Intent data) {
+        if (requestCode == SPEECH_REQUEST_CODE && resultCode == RESULT_OK) {
+            List<String> results = data.getStringArrayListExtra(
+                    RecognizerIntent.EXTRA_RESULTS);
+            spokenText = results.get(0);
+            // Do something with spokenText
+            //   speechOutput.setText(spokenText);
+        }
+        spokenTex = spokenText;
+        super.onActivityResult(requestCode, resultCode, data);
+    }
 
     /*****************************************************/
 
@@ -294,38 +279,6 @@ public class raspberry extends Activity {
             }
             return null;
         }
-    }
-
-    /*****************************************************/
-       /*  This is a background process for Speech Recognition  */
-
-    /*****************************************************/
-
-
-    private static final int SPEECH_REQUEST_CODE = 0;
-
-    // Create an intent that can start the Speech Recognizer activity
-    private void displaySpeechRecognizer() {
-        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-// Start the activity, the intent will be populated with the speech text
-        startActivityForResult(intent, SPEECH_REQUEST_CODE);
-    }
-
-    // This callback is invoked when the Speech Recognizer returns.
-// This is where you process the intent and extract the speech text from the intent.
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode,
-                                    Intent data) {
-        if (requestCode == SPEECH_REQUEST_CODE && resultCode == RESULT_OK) {
-            List<String> results = data.getStringArrayListExtra(
-                    RecognizerIntent.EXTRA_RESULTS);
-            spokenText = results.get(0);
-            // Do something with spokenText
-//            speechOutput.setText(spokenText);
-        }
-        super.onActivityResult(requestCode, resultCode, data);
     }
 
 }
